@@ -5,11 +5,11 @@ import com.ventas.SistemaVentas.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/products") // Ruta base: http://localhost:8080/api/v1/products
+@RequestMapping("/products")
 public class ProductController {
 
     @Autowired
@@ -23,7 +23,7 @@ public class ProductController {
 
     // POST: Crear un producto nuevo (Solo Admin debería usarlo)
     @PostMapping
-    public ResponseEntity<Product> create(@RequestBody Product product) {
+    public ResponseEntity<Product> create(@Valid @RequestBody Product product) { // <-- Agrega @Valid
         return ResponseEntity.ok(productService.saveProduct(product));
     }
 

@@ -1,5 +1,6 @@
 package com.ventas.SistemaVentas.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore; // <--- IMPORTANTE: Agregar este import
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -14,7 +15,7 @@ public class OrderItem {
 
     private Integer quantity;
 
-    private Integer priceAtPurchase; // Guardamos el precio al momento de la venta
+    private Integer priceAtPurchase;
 
     @ManyToOne
     @JoinColumn(name = "product_id")
@@ -22,5 +23,6 @@ public class OrderItem {
 
     @ManyToOne
     @JoinColumn(name = "order_id")
+    @JsonIgnore
     private Order order;
 }
