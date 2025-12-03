@@ -21,20 +21,19 @@ public class OrderService {
 
     @Autowired
     private OrderRepository orderRepository;
-
     @Autowired
     private ProductRepository productRepository;
-
     @Autowired
     private UserRepository userRepository;
 
-    @Transactional // Importante: Si algo falla, no guarda nada (rollback)
+    // @Transactional asegura que si algo falla, no se guarde una orden a medias
+    @Transactional
     public Order createOrder(OrderRequest request) {
         Order order = new Order();
-        order.setDate(LocalDateTime.now());
-        order.setPaymentMethod(request.getPaymentMethod());
+        order.setDate(LocalDateTime.now()); // Fecha actual
+        order.setPaymentMethod(request.getPaymentMethod()); // Medio de pago
 
-        // Asignar cajero (Si viene null, podrías asignar uno por defecto o lanzar error)
+        // Asignar el cajero que hizo la venta
         if (request.getCashierId() != null) {
             User cashier = userRepository.findById(request.getCashierId()).orElse(null);
             order.setUser(cashier);
@@ -43,27 +42,32 @@ public class OrderService {
         List<OrderItem> items = new ArrayList<>();
         int totalAmount = 0;
 
-        // Recorremos los items que envió el frontend
+        // Recorremos cada producto del carrito
         for (OrderRequest.OrderItemRequest itemRequest : request.getItems()) {
+            // Buscamos el producto en la BD para obtener su precio real
             Product product = productRepository.findById(itemRequest.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + itemRequest.getProductId()));
 
+            // Creamos el detalle de la venta
             OrderItem item = new OrderItem();
             item.setProduct(product);
             item.setQuantity(itemRequest.getQuantity());
-            item.setPriceAtPurchase(product.getPrice());
-            item.setOrder(order); // Relacionamos con la orden padre
+            item.setPriceAtPurchase(product.getPrice()); // Guardamos el precio histórico
+            item.setOrder(order);
 
             items.add(item);
+            // Sumamos al total: Precio * Cantidad
             totalAmount += (product.getPrice() * itemRequest.getQuantity());
         }
 
         order.setItems(items);
         order.setTotal(totalAmount);
 
+        // Guardamos la orden completa en la BD
         return orderRepository.save(order);
     }
 
+    // Obtener historial completo para reportes
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }

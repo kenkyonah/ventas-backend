@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth") // Esto se suma al /api/v1 del properties -> /api/v1/auth
+@RequestMapping("/auth") // Ruta: /api/v1/auth
 public class AuthController {
 
     private final AuthService authService;
@@ -20,11 +20,13 @@ public class AuthController {
         this.authService = authService;
     }
 
+    // Endpoint para iniciar sesión
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    // Endpoint para registrar nuevos usuarios
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));

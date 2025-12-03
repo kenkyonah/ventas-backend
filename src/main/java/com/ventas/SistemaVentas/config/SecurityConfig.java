@@ -36,20 +36,41 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // 1. Desactivamos CSRF porque usamos Tokens (Stateless)
                 .csrf(csrf -> csrf.disable())
+                // 2. Activamos CORS para permitir peticiones desde el Frontend (React)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // 3. Configuración de Rutas (Quién puede ver qué)
                 .authorizeHttpRequests(auth -> auth
-                        // CORRECCIÓN: Quitamos "/api/v1" porque Spring ya sabe que está en ese contexto
+                        // Rutas públicas: Login, Registro y Catálogo de Productos
                         .requestMatchers("/auth/**", "/products/**").permitAll()
-                        // Swagger UI (Opcional, útil si lo agregas)
+                        // Documentación de API (Swagger) pública
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                        // Todas las demás rutas (ej. /orders) requieren Token
                         .anyRequest().authenticated()
                 )
+                // 4. Sesión: No guardar estado en el servidor (Stateless)
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // 5. Autenticación: Usar nuestro proveedor con BD y Encriptación
                 .authenticationProvider(authenticationProvider())
+                // 6. Filtro: Revisar el Token antes de procesar la petición
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    // Configuración para permitir conexión desde el puerto de React (5173)
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // Frontend
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean
@@ -67,20 +88,6 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        // Permitimos el puerto de tu Frontend
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+        return new BCryptPasswordEncoder(); // Encriptación segura
     }
 }
